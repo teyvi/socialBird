@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { useAuth } from '../hooks/useAuth';
-import { Link } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
+import { Link, Navigate } from 'react-router-dom';
+import SplashImage from "../../assets/splashimage.jpg"
 
 const Signup = () => {
     const { signup } = useAuth();
@@ -17,14 +18,7 @@ const Signup = () => {
         const { name, value } = e.target;
         setFormData({ ...formData, [name]: value });
     };
-    console.log("data before",{
-        firstname: formData.firstname,
-        lastname: formData.lastname,
-        email: formData.email,
-        password: formData.password,
-        confirmPassword: formData.confirmPassword,
-    });
-
+ 
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (formData.password !== formData.confirmPassword) {
@@ -32,33 +26,33 @@ const Signup = () => {
             return;
         }
         try {
-            await signup({
+            const response = await signup({
                 firstname: formData.firstname,
                 lastname: formData.lastname,
                 email: formData.email,
                 password: formData.password,
                 confirmPassword: formData.confirmPassword,
             });
+            if (response.message === 'Registration successful, please verify your email.') {
+                Navigate('/email-sent?fromRegistration=true');
+            }
         } catch (err) {
             setError('Signup failed. Please try again.');
         }
-        console.log("data after",{
-            firstname: formData.firstname,
-            lastname: formData.lastname,
-            email: formData.email,
-            password: formData.password,
-            confirmPassword: formData.confirmPassword,
-        });
     };
 
     return (
-        <div className="font-mono bg-gray-400 min-h-screen flex items-center justify-center">
+        <div className="font-mono  min-h-screen flex items-center justify-center">
             <div className="container mx-auto">
                 <div className="flex justify-center px-6 my-12">
                     <div className="w-full xl:w-3/4 lg:w-11/12 flex">
-                        <div
-                            className="w-full h-auto bg-gray-700 hidden lg:block lg:w-5/12 bg-cover rounded-l-lgbg-[url('https://source.unsplash.com/Mv9hjnEUHR4/600x800')]"
-                        ></div>
+                    <div
+  className="w-full h-auto bg-gray-700 hidden lg:block lg:w-5/12 bg-cover rounded-l-lg"
+  style={{
+    backgroundImage: `url(${SplashImage})`,
+  }}
+></div>
+
                         <div className="w-full lg:w-7/12 bg-white p-5 rounded-lg lg:rounded-l-none">
                             <h3 className="pt-4 text-2xl text-center">Create an Account!</h3>
                             {error && <p className="text-red-500 text-center">{error}</p>}
@@ -143,6 +137,7 @@ const Signup = () => {
                                     </div>
                                 </div>
                                 <div className="mb-6 text-center">
+
                                     <button
                                         className="w-full px-4 py-2 font-bold text-white bg-blue-500 rounded-full hover:bg-blue-700 focus:outline-none focus:shadow-outline"
                                         type="submit"

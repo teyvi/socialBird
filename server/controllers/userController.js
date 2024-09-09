@@ -5,70 +5,76 @@ const nodemailer = require("nodemailer");
 
 exports.registerUser = async (req, res) => {
   try {
-      const { firstname, lastname, email, password, confirmPassword } = req.body;
+    const { firstname, lastname, email, password, confirmPassword } = req.body;
 
-      // Check if passwords match
-      if (password !== confirmPassword) {
-          return res.status(400).json({ error: 'Passwords do not match' });
-      }
+    // Check if passwords match
+    if (password !== confirmPassword) {
+      return res.status(400).json({ error: 'Passwords do not match' });
+    }
 
-      // Check if the user already exists
-      const existingUser = await User.findOne({ email });
-      if (existingUser) {
-          return res.status(400).json({ error: 'User already exists' });
-      }
+    // Check if the user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ error: 'User already exists' });
+    }
 
-      // Create and save the new user
-      const user = new User({ firstname, lastname, email, password });
-      await user.save();
+    // Create and save the new user
+    const user = new User({ firstname, lastname, email, password });
+    await user.save();
 
-      // Generate email verification token
-      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    // Generate email verification token
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-      // Send verification email
-      const transporter = nodemailer.createTransport({
-        service: "gmail",
-        host: "smtp.gmail.com",
-        port: 587,
-        secure: false, // Use `true` for port 465, `false` for all other ports
-        auth: {
-          user:process.env.EMAIL_USER, //sender email
-          pass: process.env.EMAIL_PASS //sender password
-        },
-      });
+    // Send verification email
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false,
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+      },
+    });
 
-      const mailOptions = {
-          from: process.env.EMAIL_USER,
-          to: email,
-          subject: 'Email Verification',
-          text: `Please verify your email by clicking the following link: 
-          ${process.env.CLIENT_URL}/verify-email?token=${token}`,
-      };
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: 'Email Verification',
+      text: `Please verify your email by clicking the following link: 
+      ${process.env.CLIENT_URL}/verify-email?token=${token}`,
+    };
 
-      await transporter.sendMail(mailOptions);
+    await transporter.sendMail(mailOptions);
 
-      res.status(201).json({ message: 'Registration successful, please verify your email.' });
+    res.status(201).json({ 
+      message: 'Registration successful, please verify your email.',
+    });
   } catch (error) {
-      res.status(500).json({ error: 'Failed to register user' });
+    res.status(500).json({ error: 'Failed to send email to user' });
   }
 };
 
 exports.verifyEmail = async (req, res) => {
   try {
-      const token = req.query.token;
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      
-      const user = await User.findById(decoded.id);
-      if (!user) {
-          return res.status(400).json({ error: 'Invalid token or user not found' });
-      }
+    const { token } = req.params;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    const user = await User.findById(decoded.id);
+    if (!user) {
+      return res.status(400).json({ error: 'Invalid token or user not found' });
+    }
 
-      user.isVerified = true;
-      await user.save();
+    if (user.isVerified) {
+      return res.status(400).json({ error: 'Email already verified' });
+    }
 
-      res.status(200).json({ message: 'Email verified successfully' });
+    user.isVerified = true;
+    await user.save();
+
+    res.status(200).json({ message: 'Email verified successfully' });
   } catch (error) {
-      res.status(500).json({ error: 'Failed to verify email' });
+    res.status(500).json({ error: 'Failed to verify email' });
   }
 };
 
@@ -120,106 +126,106 @@ exports.getUserProfile = async (req, res) => {
 };
 
 
-// // Request password reset
-// exports.requestPasswordReset = async (req, res) => {
-//   try {
-//     const { email } = req.body;
-//     const user = await User.findOne({ email });
-//     if (!user) {
-//       return res.status(400).json({ error: "No user found with that email" });
-//     }
-
-//     // Generate a reset token
-//     const resetToken = crypto.randomBytes(20).toString("hex");
-//     user.resetPasswordToken = resetToken;
-//     user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
-//     await user.save();
-
-//     // Send the token to the user via email
-//     const transporter = nodemailer.createTransport({
-//       host: "smtp-relay.brevo.com",
-//       auth: {
-//         user: process.env.EMAIL_USER,
-//         pass: process.env.EMAIL_PASS,
-//       },
-//     });
-
-//     const mailOptions = {
-//       to: user.email,
-//       from: "no-reply@socialbird.com",
-//       subject: "Password Reset",
-//       text: `You are receiving this because you (or someone else) have requested the reset of the password for your account.\n\n
-//                    Please click on the following link, or paste this into your browser to complete the process:\n\n
-//                    http://${req.headers.host}/reset-password/${resetToken}\n\n
-//                    If you did not request this, please ignore this email and your password will remain unchanged.\n`,
-//     };
-
-//     await transporter.sendMail(mailOptions);
-
-//     res.status(200).json({ message: "Password reset token sent to email" });
-//   } catch (error) {
-//     res.status(500).json({ error: "Failed to request password reset" });
-//   }
-// };
-
 
 exports.requestPasswordReset = async (req, res) => {
   try {
-      const { email } = req.body;
-      const user = await User.findOne({ email });
+    const { email } = req.body;
+    const user = await User.findOne({ email });
 
-      if (!user) {
-          return res.status(400).json({ error: 'User not found' });
-      }
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
 
-      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    // Generate a JWT token for password reset
+    const resetToken = jwt.sign(
+      { id: user._id, purpose: 'password_reset' },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
 
-      const transporter = nodemailer.createTransport({
-          host: 'smtp.gmail.com',
-          auth: {
-              user: process.env.EMAIL_USER,
-              pass: process.env.EMAIL_PASS,
-          },
-      });
+    // Store the full token in the database (for simplicity)
+    user.resetPasswordToken = resetToken;
+    user.resetPasswordExpire = Date.now() + 3600000; // 1 hour
+    await user.save();
 
-      const mailOptions = {
-          from: process.env.EMAIL_USER,
-          to: email,
-          subject: 'Password Reset Request',
-          text: `You requested a password reset. Click the link to reset your password: 
-          ${process.env.CLIENT_URL}/reset-password?token=${token}`,
-      };
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false,
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
 
-      await transporter.sendMail(mailOptions);
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: 'Password Reset Request',
+      text: `You requested a password reset. Click the link to reset your password: 
+      ${process.env.CLIENT_URL}/reset-password?token=${resetToken}`,
+    };
 
-      res.status(200).json({ message: 'Password reset link sent to your email' });
+    await transporter.sendMail(mailOptions);
+
+    res.status(200).json({ message: 'Password reset link sent to your email' });
   } catch (error) {
-      res.status(500).json({ error: 'Failed to send password reset email' });
+    console.error('Password reset request error:', error);
+    res.status(500).json({ error: 'Failed to send password reset email' });
   }
 };
 
 //reset password
 exports.resetPassword = async (req, res) => {
   try {
-      const { token, newPassword, confirmPassword } = req.body;
+    const { token, newPassword, confirmPassword } = req.body;
 
-      if (newPassword !== confirmPassword) {
-          return res.status(400).json({ error: 'Passwords do not match' });
-      }
+    if (!token || !newPassword || !confirmPassword) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
 
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      const user = await User.findById(decoded.id);
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({ error: 'Passwords do not match' });
+    }
 
-      if (!user) {
-          return res.status(400).json({ error: 'Invalid token or user not found' });
-      }
+    if (newPassword.length < 8) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters long' });
+    }
 
-      user.password = newPassword;
-      await user.save();
+    // Verify the JWT
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (error) {
+      return res.status(400).json({ error: 'Invalid or expired token' });
+    }
 
-      res.status(200).json({ message: 'Password reset successfully' });
+    // Check if the token is for password reset
+    if (decoded.purpose !== 'password_reset') {
+      return res.status(400).json({ error: 'Invalid token purpose' });
+    }
+
+    const user = await User.findOne({
+      _id: decoded.id,
+      resetPasswordToken: token,
+      resetPasswordExpire: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ error: 'Invalid or expired token' });
+    }
+
+    // Set the new password
+    user.password = newPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    await user.save();
+
+    res.status(200).json({ message: 'Password reset successfully' });
   } catch (error) {
-      res.status(500).json({ error: 'Failed to reset password' });
+    console.error('Password reset error:', error);
+    res.status(500).json({ error: 'An unexpected error occurred' });
   }
 };
 

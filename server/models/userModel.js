@@ -23,21 +23,14 @@ const userSchema = new mongoose.Schema({
         type: Boolean,
         default: false,
     },
-    createdAt: {
-        type: Date,
-        default: Date.now,
-    },
     resetPasswordToken: String,
-    resetPasswordExpires: Date,
-    
+    resetPasswordExpire: Date,
     emailVerificationToken: String,
-    emailVerificationExpires: Date,
+    emailVerificationExpire: Date,
     createdAt: {
         type: Date,
         default: Date.now,
     },
-    
-    
 });
 
 // Pre-save hook to hash the password before saving the user
