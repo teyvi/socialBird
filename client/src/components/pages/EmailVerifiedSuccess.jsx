@@ -12,7 +12,7 @@ const EmailVerifiedSuccess = () => {
             const token = params.get('token');
 
             if (!token) {
-                setMessage('Invalid verification link. Please try again.');
+                setMessage('Check your email for the verification link');
                 return;
             }
 
@@ -37,12 +37,12 @@ const EmailVerifiedSuccess = () => {
     return (
         <div className="font-mono bg-gray-100 min-h-screen flex items-center justify-center">
             <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full">
-                <h3 className="text-2xl font-bold mb-4 text-center text-green-600">Email Verification</h3>
+                <h3 className="text-2xl font-bold mb-4 text-center text-amber-300">Email Verification</h3>
                 <p className="text-gray-700 text-center">{message}</p>
                 <div className="mt-6 text-center">
                     <button 
                         onClick={() => navigate('/login')} 
-                        className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                        className="bg-amber-300 hover:bg-slate-100 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
                     >
                         Go to Login
                     </button>

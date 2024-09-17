@@ -9,29 +9,33 @@ import ResetPassword from "./components/pages/ResetPassword";
 import RequestPasswordReset from "./components/pages/RequestPasswordReset";
 import EmailVerifiedSuccess from "./components/pages/EmailVerifiedSuccess";
 import VerifyEmail from "./components/pages/VerifyEmail";
+import DashboardLayout from "./components/layouts.js/dashboard";
+import Post from "./components/pages/Post";
+import SchedulePost from "./components/pages/SchedulePost";
+import Analytics from "./components/pages/Analytics";
 
 function App() {
   const { user } = useAuth();
 
   return (
     <div className="App">
-      <Routes>
-        <Route path="/" element={<SplashScreen />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/reset-password" element={<ResetPassword />}></Route>
-        <Route
-          path="/requestpasswordreset"
-          element={<RequestPasswordReset />}
-        ></Route>
-        <Route path="/verify-email" element={<EmailVerifiedSuccess />} />
-        <Route path="/email-sent" element={<VerifyEmail />} />
-        <Route
-          path="/dashboard"
-          element={user ? <Dashboard /> : <Navigate to="/login" />}
-        />
-      </Routes>
-    </div>
+<Routes>
+  <Route path="/" element={<SplashScreen />} />
+  <Route path="/login" element={<Login />} />
+  <Route path="/signup" element={<Signup />} />
+  <Route path="/reset-password" element={<ResetPassword />} />
+  <Route path="/requestpasswordreset" element={<RequestPasswordReset />} />
+  <Route path="/verify-email" element={<EmailVerifiedSuccess />} />
+  <Route path="/email-sent" element={<VerifyEmail />} />
+  <Route path="/dashboard" element={<DashboardLayout />}>
+    <Route index element={user ? <Dashboard /> : <Navigate to="/login" />} />
+    <Route path="post" element={<Post />}/>
+    <Route path="schedulepost" element={<SchedulePost />}/>
+    <Route path="analytics" element={<Analytics />}/>
+  </Route>
+  <Route path="*" element={<Navigate to="/" replace />} />
+</Routes>
+  </div>
   );
 }
 
